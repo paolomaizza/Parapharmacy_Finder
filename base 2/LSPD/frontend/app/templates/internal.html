@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Parapharmacy Finder</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fdf953;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        header img {
+            vertical-align: middle;
+            margin-right: 15px;
+            width: 100px;
+            height: 70px;
+        }
+        header h1 {
+            font-family: 'Arial Black', sans-serif;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .container-fluid {
+            padding: 20px;
+        }
+        .form-section, .map-section {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+        }
+        .form-section h2, .map-section h2 {
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        th.sortable:hover {
+            background-color: #45a049;
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .table-container::-webkit-scrollbar {
+            width: 12px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #4CAF50;
+            border-radius: 10px;
+        }
+        .ticket {
+            border: 2px dashed #4CAF50;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background-color: #f8fdf953;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+        .search-input {
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="static/images/cross_red.png" alt="Logo">
+        <h1>Parapharmacy Finder</h1>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4 form-section">
+                <h2>Search Product</h2>
+                <div class="form-group">
+                    <label for="product-name-input">Product Name</label>
+                    <input type="text" id="product-name-input" class="form-control" placeholder="Enter product name">
+                </div>
+                <button id="search-product-btn" class="btn btn-primary mb-3">Search Product</button>
+
+                <h2>Product Details</h2>
+                <div class="table-container">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Description</th>
+                                <th>Commercial Code</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-details">
+                            <!-- Product details will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-md-4 form-section">
+                <h2>Search Location</h2>
+                <div class="form-group">
+                    <label for="region-select">Region</label>
+                    <select id="region-select" class="form-control">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="province-select">Province</label>
+                    <select id="province-select" class="form-control">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="city-select">City</label>
+                    <select id="city-select" class="form-control">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <button id="submit-btn" class="btn btn-primary mb-3">Submit</button>
+
+                <h2>Parapharmacies</h2>
+                <input type="text" id="search-pharmacy" class="search-input" placeholder="Search by address or zip code">
+                <div class="table-container">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="sortTable(0)">Select</th>
+                                <th class="sortable" onclick="sortTable(1)">Name</th>
+                                <th class="sortable" onclick="sortTable(2)">Address</th>
+                                <th class="sortable" onclick="sortTable(3)">Zip Code</th>
+                                <th class="sortable" onclick="sortTable(4)">City</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pharmacies-table-body">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-md-4 map-section">
+                <h2>Get Directions</h2>
+                <div class="form-group">
+                    <label for="current-location">Current Location</label>
+                    <input type="text" id="current-location" class="form-control" placeholder="Enter your current location">
+                </div>
+                <button id="get-directions-btn" class="btn btn-primary mb-3">Get Directions</button>
+
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script>
+        let selectedPharmacy = null;
+        let selectedProduct = null;
+
+        function fetchRegions() {
+            fetch('http://localhost:8081/regions')
+                .then(response => response.json())
+                .then(data => {
+                    let regionSelect = document.getElementById('region-select');
+                    regionSelect.innerHTML = '<option value="">Select a region</option>';
+                    data.regions.forEach(region => {
+                        let option = document.createElement('option');
+                        option.value = region.code;
+                        option.text = region.name;
+                        regionSelect.add(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching regions:', error));
+        }
+
+        document.getElementById('region-select').addEventListener('change', function() {
+            let regionCode = this.value;
+            fetch(`http://localhost:8081/regions/${regionCode}/provinces`)
+                .then(response => response.json())
+                .then(data => {
+                    let provinceSelect = document.getElementById('province-select');
+                    provinceSelect.innerHTML = '<option value="">Select a province</option>';
+                    data.provinces.forEach(province => {
+                        let option = document.createElement('option');
+                        option.value = province.name;
+                        option.text = province.name;
+                        provinceSelect.add(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching provinces:', error));
+        });
+
+        document.getElementById('province-select').addEventListener('change', function() {
+            let regionCode = document.getElementById('region-select').value;
+            let provinceName = this.value;
+            fetch(`http://localhost:8081/regions/${regionCode}/provinces/${provinceName}/cities`)
+                .then(response => response.json())
+                .then(data => {
+                    let citySelect = document.getElementById('city-select');
+                    citySelect.innerHTML = '<option value="">Select a city</option>';
+                    data.cities.forEach(city => {
+                        let option = document.createElement('option');
+                        option.value = city.name;
+                        option.text = city.name;
+                        citySelect.add(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching cities:', error));
+        });
+
+        document.getElementById('submit-btn').addEventListener('click', function() {
+            let regionCode = document.getElementById('region-select').value;
+            let provinceName = document.getElementById('province-select').value;
+            let cityName = document.getElementById('city-select').value;
+            fetch(`http://localhost:8081/regions/${regionCode}/provinces/${provinceName}/cities/${cityName}/pharmacies`)
+                .then(response => response.json())
+                .then(data => {
+                    let tableBody = document.getElementById('pharmacies-table-body');
+                    tableBody.innerHTML = '';
+                    data.pharmacies.forEach(pharmacy => {
+                        let row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><input type="radio" name="pharmacy" value="${pharmacy.address}, ${pharmacy.city}" onchange="selectPharmacy(this)"></td>
+                            <td>${pharmacy.name}</td>
+                            <td>${pharmacy.address}</td>
+                            <td>${pharmacy.cap}</td>
+                            <td>${pharmacy.city}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching pharmacies:', error));
+        });
+
+        function selectPharmacy(radio) {
+            selectedPharmacy = radio.value;
+        }
+
+        document.getElementById('search-product-btn').addEventListener('click', function() {
+            let productName = document.getElementById('product-name-input').value;
+            fetch(`http://localhost:8081/search-product?product_name=${productName}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Product not found');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let productDetailsTableBody = document.getElementById('product-details');
+                    productDetailsTableBody.innerHTML = '';
+                    if (data.error) {
+                        let row = document.createElement('tr');
+                        let cell = document.createElement('td');
+                        cell.colSpan = 3;
+                        cell.style.color = 'red';
+                        cell.textContent = data.error;
+                        row.appendChild(cell);
+                        productDetailsTableBody.appendChild(row);
+                    } else {
+                        selectedProduct = productName;
+                        let productDetails = data.details;
+                        productDetails.forEach(detail => {
+                            let row = document.createElement('tr');
+                            let selectCell = document.createElement('td');
+                            let selectInput = document.createElement('input');
+                            selectInput.type = 'radio';
+                            selectInput.name = 'product';
+                            selectInput.value = detail.description + ' - ' + detail.commercial_code;
+                            selectInput.onchange = selectProduct;
+                            selectCell.appendChild(selectInput);
+                            let descriptionCell = document.createElement('td');
+                            let commercialCodeCell = document.createElement('td');
+                            descriptionCell.textContent = detail.description;
+                            commercialCodeCell.textContent = detail.commercial_code;
+                            row.appendChild(selectCell);
+                            row.appendChild(descriptionCell);
+                            row.appendChild(commercialCodeCell);
+                            productDetailsTableBody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    let productDetailsTableBody = document.getElementById('product-details');
+                    productDetailsTableBody.innerHTML = '';
+                    let row = document.createElement('tr');
+                    let cell = document.createElement('td');
+                    cell.colSpan = 3;
+                    cell.style.color = 'red';
+                    cell.textContent = error.message;
+                    row.appendChild(cell);
+                    productDetailsTableBody.appendChild(row);
+                });
+        });
+
+        function selectProduct(event) {
+            const ticket = document.createElement('div');
+            ticket.classList.add('ticket');
+            ticket.textContent = `Selected Product: ${event.target.value}`;
+            document.querySelector('.form-section').appendChild(ticket);
+        }
+
+        document.getElementById('get-directions-btn').addEventListener('click', function() {
+            let currentLocation = document.getElementById('current-location').value;
+            if (!currentLocation || !selectedPharmacy) {
+                alert('Please select a pharmacy and enter your current location.');
+                return;
+            }
+            geocodeAddress(currentLocation, function(startCoords) {
+                geocodeAddress(selectedPharmacy, function(endCoords) {
+                    initMap(startCoords, endCoords);
+                });
+            });
+        });
+
+        function geocodeAddress(address, callback) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${address}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        let coords = {
+                            lat: parseFloat(data[0].lat),
+                            lon: parseFloat(data[0].lon)
+                        };
+                        callback(coords);
+                    } else {
+                        alert('Address not found: ' + address);
+                    }
+                })
+                .catch(error => console.error('Error geocoding address:', error));
+        }
+
+        function initMap(startCoords, endCoords) {
+            let map = L.map('map').setView([startCoords.lat, startCoords.lon], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            L.Routing.control({
+                waypoints: [
+                    L.latLng(startCoords.lat, startCoords.lon),
+                    L.latLng(endCoords.lat, endCoords.lon)
+                ],
+                routeWhileDragging: true
+            }).addTo(map);
+        }
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById("pharmacies-table-body");
+            const rows = Array.from(table.getElementsByTagName("tr"));
+            const sortedRows = rows.sort((a, b) => {
+                const cellA = a.getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+                const cellB = b.getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+                return cellA.localeCompare(cellB);
+            });
+            table.innerHTML = "";
+            sortedRows.forEach(row => table.appendChild(row));
+        }
+
+        document.getElementById('search-pharmacy').addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#pharmacies-table-body tr');
+            rows.forEach(row => {
+                const address = row.getElementsByTagName('td')[2].innerText.toLowerCase();
+                const zip = row.getElementsByTagName('td')[3].innerText.toLowerCase();
+                if (address.includes(filter) || zip.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        fetchRegions();
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
